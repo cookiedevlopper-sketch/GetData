@@ -1,0 +1,148 @@
+local http = game:GetService("HttpService")
+
+-- Configuration
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1449104072178405649/LRqUxTqq2-TwhK2M3HqsvhKvYeKx1FSgpo-Lkun7yZy8_6kPrSWHtUJ0-urLH3cfTEp4"
+
+-- Fonction pour obtenir l'heure actuelle
+local function getTime()
+    local time = os.date("*t")
+    return string.format("%02d:%02d:%02d", time.hour, time.min, time.sec)
+end
+
+-- Fonction pour obtenir la date
+local function getDate()
+    return os.date("%d/%m/%Y")
+end
+
+-- Fonction pour obtenir les informations du joueur
+local function getPlayerInfo()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    
+    return {
+        name = player.Name,
+        displayName = player.DisplayName,
+        userId = player.UserId,
+        accountAge = player.AccountAge,
+        premium = player.MembershipType == Enum.MembershipType.Premium,
+        health = humanoid and humanoid.Health or "N/A",
+        maxHealth = humanoid and humanoid.MaxHealth or "N/A",
+        walkSpeed = humanoid and humanoid.WalkSpeed or "N/A",
+        jumpPower = humanoid and humanoid.JumpPower or "N/A"
+    }
+end
+
+-- Fonction pour envoyer au webhook
+local function sendWebhook(message, color)
+    local playerInfo = getPlayerInfo()
+    local gameInfo = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
+    
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "🔔 Script Execution",
+            ["description"] = message,
+            ["color"] = color or 3447003,
+            ["fields"] = {
+                {
+                    ["name"] = "⏰ Execution Time",
+                    ["value"] = getTime(),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📅 Date",
+                    ["value"] = getDate(),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "✅ Status",
+                    ["value"] = "Legal Script",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "👤 Username",
+                    ["value"] = playerInfo.name,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📛 Display Name",
+                    ["value"] = playerInfo.displayName,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🆔 User ID",
+                    ["value"] = tostring(playerInfo.userId),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "📊 Account Age",
+                    ["value"] = playerInfo.accountAge .. " days",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "💎 Premium",
+                    ["value"] = playerInfo.premium and "Yes" or "No",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "❤️ Health",
+                    ["value"] = playerInfo.health .. " / " .. playerInfo.maxHealth,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🏃 Walk Speed",
+                    ["value"] = tostring(playerInfo.walkSpeed),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🦘 Jump Power",
+                    ["value"] = tostring(playerInfo.jumpPower),
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🎮 Game",
+                    ["value"] = gameInfo.Name,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "🌐 IP Address",
+                    ["value"] = "Not available (Roblox)",
+                    ["inline"] = false
+                },
+                {
+                    ["name"] = "🔗 Profile",
+                    ["value"] = "[View Profile](https://www.roblox.com/users/" .. playerInfo.userId .. "/profile)",
+                    ["inline"] = false
+                }
+            },
+            ["thumbnail"] = {
+                ["url"] = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. playerInfo.userId .. "&width=420&height=420&format=png"
+            },
+            ["footer"] = {
+                ["text"] = "Xona Hub Logs"
+            },
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
+        }}
+    }
+    
+    local success, err = pcall(function()
+        local encoded = http:JSONEncode(data)
+        local response = request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = encoded
+        })
+    end)
+    
+    if success then
+        print("✅ script executed with succes !")
+    else
+        warn("❌ Erreur webhook:", err)
+    end
+end
+
+-- Notification au démarrage
+sendWebhook("Script has been executed successfully!", 3066993)
